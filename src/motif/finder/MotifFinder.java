@@ -3,6 +3,7 @@ package motif.finder;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -10,7 +11,7 @@ import java.util.logging.Logger;
 public class MotifFinder {
 
     public static String[] sequence;
-    
+    public static ArrayList<CandidateMotif> motifs;
     public static void main(String[] args) {
         getUserAction();
     }
@@ -55,8 +56,10 @@ public class MotifFinder {
         switch(algorithm){
             case "1":
                 bruteForce(sequence, length);
+                break;
             case "2":
                 greedyMotif(sequence, length);
+                break;
         }
     }
 
@@ -68,7 +71,7 @@ public class MotifFinder {
         // creates a FileWriter Object
         FileWriter writer = new FileWriter(file);
         // Writes the content to the file
-        writer.write("atcacttggaacatcgtctagc\n"
+        writer.write("atcacttg\n"
                 + "cgttggaaatcgctcgtctagc\n"
                 + "atcgatcgtctagcccgtggaa\n"
                 + "atcgatcgtccctcggaatagc\n"
@@ -95,11 +98,60 @@ public class MotifFinder {
     
     private static void bruteForce(String[] sequence, String length) {
         System.out.println("Working...(This could take a while)");
-        throw new UnsupportedOperationException("Brute Force."); //To change body of generated methods, choose Tools | Templates.
+        getConsensusMotifs(sequence,Integer.parseInt(length));
     }
 
     private static void greedyMotif(String[] sequence, String length) {
         System.out.println("Working...(This could take a while)");
+        getConsensusMotifs(sequence,Integer.parseInt(length));
+        
         throw new UnsupportedOperationException("Greedy Motif."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    public static ArrayList<CandidateMotif> getConsensusMotifs(String[] sequence, int length){
+        //generates all possible motifs with the given length
+        motifs = generateSequences(sequence, length);
+        
+        return motifs;
+    }
+
+    private static ArrayList<CandidateMotif> generateSequences(String[] sequence, int length) {
+        motifs = new ArrayList<CandidateMotif>();
+        generateCandidateMotifs(length, "");
+        return motifs;
+    }
+    
+    public static void generateCandidateMotifs(int maxLength, String curr) {
+        char[] alphabet = new char[]{'a','c','g','t'};
+        
+        // If the current string has reached it's maximum length
+        if(curr.length() == maxLength) {
+            motifs.add(new CandidateMotif(curr,0));
+
+        // Else add each letter from the alphabet to new strings and process these new strings again
+        } else {
+            for(int i = 0; i < alphabet.length; i++) {
+                String oldCurr = curr;
+                
+                curr += alphabet[i];
+                generateCandidateMotifs(maxLength,curr);
+                curr = oldCurr;
+            }
+        }
+    }
+    
+    public static int HammingDistance(String v, String w){
+        int distance = 0;
+        if(v.length() == w.length()){
+            for(int i = 0; i < v.length(); i++){
+                if(v.charAt(i) != w.charAt(i)){
+                    distance++;
+                }
+            }
+        }else{
+            System.out.println("Strings weren't of same length.");
+            return 0;
+        }
+        return distance;
     }
 }
