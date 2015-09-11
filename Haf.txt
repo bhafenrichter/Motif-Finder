@@ -1,4 +1,4 @@
-atcacttg
+atcacttggaacatcgtctagc
 cgttggaaatcgctcgtctagc
 atcgatcgtctagcccgtggaa
 atcgatcgtccctcggaatagc

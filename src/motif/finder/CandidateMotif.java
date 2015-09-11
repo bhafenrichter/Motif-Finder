@@ -15,6 +15,6 @@ public class CandidateMotif {
     }
     
     public String toString(){
-        return sequence + ", " + score;
+        return sequence + ", Score:" + score;
     }
 }

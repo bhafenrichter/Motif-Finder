@@ -68,10 +68,12 @@ public class MotifFinder {
         File file = new File("Haf.txt");
         // creates the file
         file.createNewFile();
+  
         // creates a FileWriter Object
         FileWriter writer = new FileWriter(file);
         // Writes the content to the file
-        writer.write("atcacttg\n"
+        writer.write(
+                  "atcacttggaacatcgtctagc\n"
                 + "cgttggaaatcgctcgtctagc\n"
                 + "atcgatcgtctagcccgtggaa\n"
                 + "atcgatcgtccctcggaatagc\n"
@@ -98,7 +100,59 @@ public class MotifFinder {
     
     private static void bruteForce(String[] sequence, String length) {
         System.out.println("Working...(This could take a while)");
+        //initializes the candidate motifs with scores of 0
         getConsensusMotifs(sequence,Integer.parseInt(length));
+        
+        //iterate through the sequences and score the motifs
+        for(int i = 0; i < motifs.size(); i++){
+            String curMotif = motifs.get(i).sequence;
+            //iterate through each string in the string[]
+            int[] motifScores = new int[Integer.parseInt(length)];
+            for(int j = 0; j < Integer.parseInt(length); j++){
+                //DNA strand sequence
+                String curSequence = sequence[j];
+                CandidateMotif bestMotif = new CandidateMotif(curMotif,99999);
+                //iterate through and compare the curMotif to elements in curSequence
+                for(int k = 0; k < curSequence.length() - Integer.parseInt(length); k++){
+                    String curSnippett = curSequence.substring(k,k+8);
+                    //System.out.println("(" + curMotif + ", " + curSnippett+ ")" + "-> " + hammingDistance(curMotif, curSnippett));
+                    int score = hammingDistance(curMotif, curSnippett);
+                    if(score < bestMotif.score){
+                        bestMotif.score = score;
+                    }
+                }
+                //set the score of the motif for that specific sequence
+                motifScores[j] = bestMotif.score;
+            }
+            
+            //sum all of the scores for this particular motif based on distances of strands
+            int motifScore = 0;
+            for(int j = 0; j < motifScores.length; j++){
+                motifScore += motifScores[j];
+            }
+            motifs.get(i).score = motifScore;
+            //System.out.println(motifs.get(i));
+        }
+        
+        //find the minimum score
+        CandidateMotif bestMotif = new CandidateMotif("",9999);
+        for(int i = 0; i < motifs.size(); i++){
+            if(motifs.get(i).score < bestMotif.score){
+                bestMotif = motifs.get(i);
+            }
+        }
+        System.out.println("");
+        System.out.println("Best Motif: " + bestMotif.sequence);
+        System.out.println("");
+        for(int i = 0; i < sequence.length; i++){
+            if(sequence[i] != null){
+                printExposedMotifs(sequence[i], bestMotif.sequence, Integer.parseInt(length), bestMotif.score);
+            }else{
+                break;
+            }
+        }
+        System.out.println("");
+        System.out.println("Total Hemming Distance from Consensus Motif to Best Motif in each Sequence: " + bestMotif.score);
     }
 
     private static void greedyMotif(String[] sequence, String length) {
@@ -140,11 +194,13 @@ public class MotifFinder {
         }
     }
     
-    public static int HammingDistance(String v, String w){
+    public static int hammingDistance(String v, String w){
         int distance = 0;
         if(v.length() == w.length()){
             for(int i = 0; i < v.length(); i++){
-                if(v.charAt(i) != w.charAt(i)){
+                char vChar = v.charAt(i);
+                char wChar = w.charAt(i);
+                if(vChar != wChar){
                     distance++;
                 }
             }
@@ -153,5 +209,23 @@ public class MotifFinder {
             return 0;
         }
         return distance;
+    }
+
+    private static void printExposedMotifs(String sequence, String motif, int length, int maxDistance) {
+        int startingPosition = 0;
+        int bestScore = 9999;
+        //gets the starting position of the best sequence to capitalize
+        for (int i = 0; i < sequence.length() - length; i++) {
+            int curDistance = hammingDistance(motif, sequence.substring(i, i+8));
+            if(curDistance < bestScore){
+                bestScore = curDistance;
+                startingPosition = i;
+            }
+        }
+        String printedString = "";
+        printedString += sequence.substring(0,startingPosition - 1);
+        printedString += sequence.substring(startingPosition, startingPosition + 8).toUpperCase();
+        printedString += sequence.substring(startingPosition + 8, sequence.length());
+        System.out.println(printedString);
     }
 }
