@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,7 +56,7 @@ public class MotifFinder {
         
         switch(algorithm){
             case "1":
-                bruteForce(sequence, length);
+                bruteForce(sequence, length); 
                 break;
             case "2":
                 greedyMotif(sequence, length);
@@ -101,7 +102,11 @@ public class MotifFinder {
     private static void bruteForce(String[] sequence, String length) {
         System.out.println("Working...(This could take a while)");
         //initializes the candidate motifs with scores of 0
+        long startTime = new Date().getTime();
         getConsensusMotifs(sequence,Integer.parseInt(length));
+        
+        //keeps track of how many operations are done
+        int operations = 0;
         
         //iterate through the sequences and score the motifs
         for(int i = 0; i < motifs.size(); i++){
@@ -120,6 +125,7 @@ public class MotifFinder {
                     if(score < bestMotif.score){
                         bestMotif.score = score;
                     }
+                    operations++;
                 }
                 //set the score of the motif for that specific sequence
                 motifScores[j] = bestMotif.score;
@@ -129,6 +135,7 @@ public class MotifFinder {
             int motifScore = 0;
             for(int j = 0; j < motifScores.length; j++){
                 motifScore += motifScores[j];
+                operations++;
             }
             motifs.get(i).score = motifScore;
             //System.out.println(motifs.get(i));
@@ -140,6 +147,7 @@ public class MotifFinder {
             if(motifs.get(i).score < bestMotif.score){
                 bestMotif = motifs.get(i);
             }
+            operations++;
         }
         System.out.println("");
         System.out.println("Best Motif: " + bestMotif.sequence);
@@ -147,12 +155,16 @@ public class MotifFinder {
         for(int i = 0; i < sequence.length; i++){
             if(sequence[i] != null){
                 printExposedMotifs(sequence[i], bestMotif.sequence, Integer.parseInt(length), bestMotif.score);
+                operations++;
             }else{
                 break;
             }
         }
         System.out.println("");
         System.out.println("Total Hemming Distance from Consensus Motif to Best Motif in each Sequence: " + bestMotif.score);
+        long endTime = new Date().getTime();
+        System.out.println("");
+        System.out.println("Elapsed Time: " + (endTime - startTime) + " ms for " + operations + " fundamental operations");
     }
 
     private static void greedyMotif(String[] sequence, String length) {
