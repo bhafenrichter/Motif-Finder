@@ -13,6 +13,7 @@ public class MotifFinder {
 
     public static String[] sequence;
     public static ArrayList<CandidateMotif> motifs;
+
     public static void main(String[] args) {
         getUserAction();
     }
@@ -47,16 +48,16 @@ public class MotifFinder {
                 getUserAction();
         }
     }
-    
+
     private static void searchSequence(String[] sequence) {
         KeyboardInputClass input = new KeyboardInputClass();
         String length = input.getKeyboardInput("Specify the length of the motif to be found:");
         System.out.println("");
         String algorithm = input.getKeyboardInput("1. Brute Force Median String Search \n2. Greedy Motif Search");
-        
-        switch(algorithm){
+
+        switch (algorithm) {
             case "1":
-                bruteForce(sequence, length); 
+                bruteForce(sequence, length, true);
                 break;
             case "2":
                 greedyMotif(sequence, length);
@@ -69,12 +70,12 @@ public class MotifFinder {
         File file = new File("Haf.txt");
         // creates the file
         file.createNewFile();
-  
+
         // creates a FileWriter Object
         FileWriter writer = new FileWriter(file);
         // Writes the content to the file
         writer.write(
-                  "atcacttggaacatcgtctagc\n"
+                "atcacttggaacatcgtctagc\n"
                 + "cgttggaaatcgctcgtctagc\n"
                 + "atcgatcgtctagcccgtggaa\n"
                 + "atcgatcgtccctcggaatagc\n"
@@ -98,31 +99,38 @@ public class MotifFinder {
             retrieveSequence();
         }
     }
-    
-    private static void bruteForce(String[] sequence, String length) {
-        System.out.println("Working...(This could take a while)");
+
+    private static CandidateMotif bruteForce(String[] sequence, String length, boolean isPrintResults) {
+        if(isPrintResults){
+            System.out.println("Working...(This could take a while)");
+        }
+        
         //initializes the candidate motifs with scores of 0
         long startTime = new Date().getTime();
-        getConsensusMotifs(sequence,Integer.parseInt(length));
-        
+        getConsensusMotifs(sequence, Integer.parseInt(length));
+
         //keeps track of how many operations are done
         int operations = 0;
-        
+
         //iterate through the sequences and score the motifs
-        for(int i = 0; i < motifs.size(); i++){
+        for (int i = 0; i < motifs.size(); i++) {
             String curMotif = motifs.get(i).sequence;
             //iterate through each string in the string[]
-            int[] motifScores = new int[Integer.parseInt(length)];
-            for(int j = 0; j < Integer.parseInt(length); j++){
+            int[] motifScores = new int[sequence.length];
+            for (int j = 0; j < sequence.length; j++) {
+                if(sequence[j] == null){
+                    break;
+                }
                 //DNA strand sequence
                 String curSequence = sequence[j];
-                CandidateMotif bestMotif = new CandidateMotif(curMotif,99999);
+                CandidateMotif bestMotif = new CandidateMotif(curMotif, 99999);
+                //System.out.println(curSequence);
                 //iterate through and compare the curMotif to elements in curSequence
-                for(int k = 0; k < curSequence.length() - Integer.parseInt(length); k++){
-                    String curSnippett = curSequence.substring(k,k+8);
+                for (int k = 0; k < curSequence.length() - Integer.parseInt(length); k++) {
+                    String curSnippett = curSequence.substring(k, k + Integer.parseInt(length));
                     //System.out.println("(" + curMotif + ", " + curSnippett+ ")" + "-> " + hammingDistance(curMotif, curSnippett));
                     int score = hammingDistance(curMotif, curSnippett);
-                    if(score < bestMotif.score){
+                    if (score < bestMotif.score) {
                         bestMotif.score = score;
                     }
                     operations++;
@@ -130,93 +138,94 @@ public class MotifFinder {
                 //set the score of the motif for that specific sequence
                 motifScores[j] = bestMotif.score;
             }
-            
+
             //sum all of the scores for this particular motif based on distances of strands
             int motifScore = 0;
-            for(int j = 0; j < motifScores.length; j++){
+            for (int j = 0; j < motifScores.length; j++) {
                 motifScore += motifScores[j];
                 operations++;
             }
             motifs.get(i).score = motifScore;
             //System.out.println(motifs.get(i));
         }
-        
+
         //find the minimum score
-        CandidateMotif bestMotif = new CandidateMotif("",9999);
-        for(int i = 0; i < motifs.size(); i++){
-            if(motifs.get(i).score < bestMotif.score){
+        CandidateMotif bestMotif = new CandidateMotif("", 9999);
+        for (int i = 0; i < motifs.size(); i++) {
+            if (motifs.get(i).score < bestMotif.score) {
                 bestMotif = motifs.get(i);
             }
             operations++;
         }
-        System.out.println("");
-        System.out.println("Best Motif: " + bestMotif.sequence);
-        System.out.println("");
-        for(int i = 0; i < sequence.length; i++){
-            if(sequence[i] != null){
-                printExposedMotifs(sequence[i], bestMotif.sequence, Integer.parseInt(length), bestMotif.score);
-                operations++;
-            }else{
-                break;
+        if (isPrintResults) {
+            System.out.println("");
+            System.out.println("Best Motif: " + bestMotif.sequence);
+            System.out.println("");
+            for (int i = 0; i < sequence.length; i++) {
+                if (sequence[i] != null) {
+                    printExposedMotifs(sequence[i], bestMotif.sequence, Integer.parseInt(length), bestMotif.score);
+                    operations++;
+                } else {
+                    break;
+                }
             }
+            System.out.println("");
+            System.out.println("Total Hemming Distance from Consensus Motif to Best Motif in each Sequence: " + bestMotif.score);
+            long endTime = new Date().getTime();
+            System.out.println("");
+            System.out.println("Elapsed Time: " + (endTime - startTime) + " ms for " + operations + " fundamental operations");
+
         }
-        System.out.println("");
-        System.out.println("Total Hemming Distance from Consensus Motif to Best Motif in each Sequence: " + bestMotif.score);
-        long endTime = new Date().getTime();
-        System.out.println("");
-        System.out.println("Elapsed Time: " + (endTime - startTime) + " ms for " + operations + " fundamental operations");
+
+        return bestMotif;
     }
 
     private static void greedyMotif(String[] sequence, String length) {
         System.out.println("Working...(This could take a while)");
-        getConsensusMotifs(sequence,Integer.parseInt(length));
-        
-        throw new UnsupportedOperationException("Greedy Motif."); //To change body of generated methods, choose Tools | Templates.
-    }
-    
-    public static ArrayList<CandidateMotif> getConsensusMotifs(String[] sequence, int length){
-        //generates all possible motifs with the given length
-        motifs = generateSequences(sequence, length);
-        
-        return motifs;
+        getConsensusMotifs(sequence, Integer.parseInt(length));
+
+        //scans and finds the best consensus motif in first two strands
+        CandidateMotif bestMotif = bruteForce(Arrays.copyOfRange(sequence, 0, 1), "8", false);
+        System.out.println(bestMotif);
     }
 
-    private static ArrayList<CandidateMotif> generateSequences(String[] sequence, int length) {
+    public static ArrayList<CandidateMotif> getConsensusMotifs(String[] sequence, int length) {
+        //generates all possible motifs with the given length
         motifs = new ArrayList<CandidateMotif>();
         generateCandidateMotifs(length, "");
         return motifs;
     }
-    
-    public static void generateCandidateMotifs(int maxLength, String curr) {
-        char[] alphabet = new char[]{'a','c','g','t'};
-        
-        // If the current string has reached it's maximum length
-        if(curr.length() == maxLength) {
-            motifs.add(new CandidateMotif(curr,0));
 
-        // Else add each letter from the alphabet to new strings and process these new strings again
+    public static void generateCandidateMotifs(int maxLength, String curr) {
+        char[] alphabet = new char[]{'a', 'c', 'g', 't'};
+
+        // If the current string has reached it's maximum length
+        if (curr.length() == maxLength) {
+            motifs.add(new CandidateMotif(curr, 0));
+
+            // Else add each letter from the alphabet to new strings and process these new strings again
         } else {
-            for(int i = 0; i < alphabet.length; i++) {
+            for (int i = 0; i < alphabet.length; i++) {
                 String oldCurr = curr;
-                
+
                 curr += alphabet[i];
-                generateCandidateMotifs(maxLength,curr);
+                generateCandidateMotifs(maxLength, curr);
                 curr = oldCurr;
             }
         }
     }
-    
-    public static int hammingDistance(String v, String w){
+
+    public static int hammingDistance(String v, String w) {
         int distance = 0;
-        if(v.length() == w.length()){
-            for(int i = 0; i < v.length(); i++){
+        if (v.length() == w.length()) {
+            for (int i = 0; i < v.length(); i++) {
                 char vChar = v.charAt(i);
                 char wChar = w.charAt(i);
-                if(vChar != wChar){
+                if (vChar != wChar) {
                     distance++;
                 }
             }
-        }else{
+        } else {
             System.out.println("Strings weren't of same length.");
             return 0;
         }
@@ -228,16 +237,21 @@ public class MotifFinder {
         int bestScore = 9999;
         //gets the starting position of the best sequence to capitalize
         for (int i = 0; i < sequence.length() - length; i++) {
-            int curDistance = hammingDistance(motif, sequence.substring(i, i+8));
-            if(curDistance < bestScore){
+            int curDistance = hammingDistance(motif, sequence.substring(i, i + length));
+            if (curDistance < bestScore) {
                 bestScore = curDistance;
                 startingPosition = i;
             }
         }
         String printedString = "";
-        printedString += sequence.substring(0,startingPosition - 1);
-        printedString += sequence.substring(startingPosition, startingPosition + 8).toUpperCase();
-        printedString += sequence.substring(startingPosition + 8, sequence.length());
+
+        if(maxDistance != 0){
+            printedString += sequence.substring(0, startingPosition - 1);
+        }else{
+            printedString += sequence.substring(0, startingPosition);
+        }
+        printedString += sequence.substring(startingPosition, startingPosition + length).toUpperCase();
+        printedString += sequence.substring(startingPosition + length, sequence.length());
         System.out.println(printedString);
     }
 }
