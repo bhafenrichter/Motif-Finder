@@ -1,3 +1,20 @@
+//Program: Hafenrichter.java
+//Course: COSC 420
+//Description: An implementation of the burte force median string algorithm and greedy motif search algorithm
+//Author: Brandon Hafenrichter
+//Revised: September 15, 2015
+//Language: Java
+//IDE: Netbeans 8.0.2
+
+//***********************************************************************************************************
+//***********************************************************************************************************
+
+//Class Main.java
+//Description: Contains the essential methods and calls required to run the two algorithms
+
+//***********************************************************************************************************
+//***********************************************************************************************************
+
 package motif.finder;
 
 import java.io.File;
@@ -9,6 +26,10 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+
+//Method: Main
+//Description: Prompts the user for the information required to run the algorithm and runs the algorithm
+//Returns: None
 public class MotifFinder {
 
     public static String[] sequence;
@@ -18,6 +39,15 @@ public class MotifFinder {
         getUserAction();
     }
 
+    //***********************************************************************************************************
+    //Method: getUserAction
+    //Description: The process of getting all of the user input required in order to run each of the 
+    //algorithms. Also allows user to exit
+    //Parameters: None
+    //Calls: retrieveSequence(), searchSequence()
+    //Globals: None
+    //***********************************************************************************************************
+    
     public static void getUserAction() {
         System.out.println("Motif Finder: Brandon Hafenrichter");
         System.out.println("");
@@ -48,7 +78,15 @@ public class MotifFinder {
                 getUserAction();
         }
     }
-
+    
+    //***********************************************************************************************************
+    //Method: searchSequence
+    //Description: This is the decider for which algorithm is used to search the input given by the user
+    //Parameters: String[] sequence -> The DNA sequence supplied by the user via text file
+    //Returns: None
+    //Globals: None
+    //***********************************************************************************************************
+    
     private static void searchSequence(String[] sequence) {
         KeyboardInputClass input = new KeyboardInputClass();
         String length = input.getKeyboardInput("Specify the length of the motif to be found:");
@@ -65,6 +103,14 @@ public class MotifFinder {
         }
     }
 
+    //***********************************************************************************************************
+    //Method: retrieveSequence
+    //Description: Converts the textfile supplied by the user into a String[] that can be used by the algorithms
+    //Parameters: None
+    //Returns: None
+    //Globals: String[] sequence -> The DNA sequence that will be checked by both algorithms
+    //***********************************************************************************************************
+    
     private static void retrieveSequence() throws IOException {
         //test
         File file = new File("Haf.txt");
@@ -100,9 +146,25 @@ public class MotifFinder {
         }
     }
 
+    //***********************************************************************************************************
+    //Method: bruteForce
+    //Description: The first method that searches the DNA sequence via Median String Search
+    //Parameters:   String[] sequence -> DNA sequences broken up into strings via array
+    //              int length -> The length of the l-mer specified by the user
+    //              boolean isPrintResults -> Determines whether we need to print our results, instead of just
+    //              returning them for later use (Greedy Algorithm)
+    //Returns: bestMotif -> returns the best Motif for the sequence provided
+    //Globals: motifs -> Collection of all possible motifs
+    //***********************************************************************************************************
+    
     private static CandidateMotif bruteForce(String[] sequence, String length, boolean isPrintResults) {
         if(isPrintResults){
             System.out.println("Working...(This could take a while)");
+        }
+        
+        if(Integer.parseInt(length) > sequence[0].length()){
+            System.out.println("Motif length cannot be larger than the number of elements in the DNA strand.  Please try again.");
+            return new CandidateMotif("",0);
         }
         
         //initializes the candidate motifs with scores of 0
@@ -124,7 +186,7 @@ public class MotifFinder {
                 //DNA strand sequence
                 String curSequence = sequence[j];
                 CandidateMotif bestMotif = new CandidateMotif(curMotif, 99999);
-                //System.out.println(curSequence);
+                //System.out.println("Current Sequence: " + curSequence);
                 //iterate through and compare the curMotif to elements in curSequence
                 for (int k = 0; k < curSequence.length() - Integer.parseInt(length); k++) {
                     String curSnippett = curSequence.substring(k, k + Integer.parseInt(length));
@@ -173,30 +235,56 @@ public class MotifFinder {
             System.out.println("Total Hemming Distance from Consensus Motif to Best Motif in each Sequence: " + bestMotif.score);
             long endTime = new Date().getTime();
             System.out.println("");
-            System.out.println("Elapsed Time: " + (endTime - startTime) + " ms for " + operations + " fundamental operations");
+            System.out.println("Elapsed Time: " + (endTime - startTime) + " ms for " + Math.abs(operations) + " fundamental operations");
 
         }
 
         return bestMotif;
     }
 
+    //***********************************************************************************************************
+    //Method: greedyMotif
+    //Description: The second method that searches the DNA sequence via Greedy Motif Search Algorithm. (Faster).
+    //Parameters:   String[] sequence -> DNA sequences broken up into strings via array
+    //              int length -> The length of the l-mer specified by the user
+    //Returns: None
+    //Globals: motifs -> Collection of all possible motifs
+    //***********************************************************************************************************
+    
     private static void greedyMotif(String[] sequence, String length) {
         System.out.println("Working...(This could take a while)");
-        getConsensusMotifs(sequence, Integer.parseInt(length));
+        generateCandidateMotifs(Integer.parseInt(length), "");
 
         //scans and finds the best consensus motif in first two strands
-        CandidateMotif bestMotif = bruteForce(Arrays.copyOfRange(sequence, 0, 1), "8", false);
-        System.out.println(bestMotif);
+        ArrayList<CandidateMotif> bestMotifs = new ArrayList<CandidateMotif>();
+        //first DNA strand searched via bruteForce Algorithm
+        //bestMotifs.add(bruteForce(Arrays.copyOfRange(sequence, 0, 1), length, false));
+        //second DNA strand as well
+        //bestMotifs.add(bruteForce(Arrays.copyOfRange(sequence,1,2), length, false));
+        for(int i = 0; i < Integer.parseInt(length); i++){
+            bestMotifs.add(bruteForce(Arrays.copyOfRange(sequence,i,i+1), length, false));
+        }
+        
+        String[] test = new String[Integer.parseInt(length)];
+        for(int i = 0; i < Integer.parseInt(length); i++){
+            test[i] = bestMotifs.get(i).sequence;
+        }
+        bruteForce(test, length, true);
     }
 
-    public static ArrayList<CandidateMotif> getConsensusMotifs(String[] sequence, int length) {
-        //generates all possible motifs with the given length
-        motifs = new ArrayList<CandidateMotif>();
-        generateCandidateMotifs(length, "");
-        return motifs;
-    }
-
+    //***********************************************************************************************************
+    //Method: generateCandidateMotifs
+    //Description: Generates all of the possible motifs that could be used by the algorithm depending on the score
+    //Parameters:   String[] sequence -> DNA sequences broken up into strings via array
+    //              int length -> The length of the l-mer specified by the user
+    //Returns: ArrayList<CandidateMotif> -> collection of all the possible motifs, populated by the end of the 
+    //         algorithm
+    //Globals: motifs -> Collection of all possible motifs
+    //***********************************************************************************************************
+    
     public static void generateCandidateMotifs(int maxLength, String curr) {
+        motifs = new ArrayList<CandidateMotif>();
+        
         char[] alphabet = new char[]{'a', 'c', 'g', 't'};
 
         // If the current string has reached it's maximum length
@@ -215,7 +303,20 @@ public class MotifFinder {
         }
     }
 
+    //***********************************************************************************************************
+    //Method: hammingDistance
+    //Description: returns the Hamming Distance of two strings
+    //Parameters:   String v -> First string that will be compared to the second
+    //              String w -> Second string that will be compared to the first
+    //Returns: int score -> the Hamming Distance 
+    //Globals: None
+    //***********************************************************************************************************
+    
     public static int hammingDistance(String v, String w) {
+        //handles case
+        v = v.toLowerCase();
+        w = w.toLowerCase();
+        
         int distance = 0;
         if (v.length() == w.length()) {
             for (int i = 0; i < v.length(); i++) {
@@ -232,6 +333,17 @@ public class MotifFinder {
         return distance;
     }
 
+    //***********************************************************************************************************
+    //Method: printExposedMotifs
+    //Description: Prints out the capitalized sequences that match the best motif
+    //Parameters:   String sequence -> DNA strand that is currently being printed out
+    //              String motif -> motif that needs to be matched with
+    //              int length -> The length of the l-mer specified by the user
+    //              int maxDistance -> The score of the best motif
+    //Returns: None
+    //Globals: None
+    //***********************************************************************************************************
+    
     private static void printExposedMotifs(String sequence, String motif, int length, int maxDistance) {
         int startingPosition = 0;
         int bestScore = 9999;
@@ -245,11 +357,7 @@ public class MotifFinder {
         }
         String printedString = "";
 
-        if(maxDistance != 0){
-            printedString += sequence.substring(0, startingPosition - 1);
-        }else{
-            printedString += sequence.substring(0, startingPosition);
-        }
+        printedString += sequence.substring(0, startingPosition);
         printedString += sequence.substring(startingPosition, startingPosition + length).toUpperCase();
         printedString += sequence.substring(startingPosition + length, sequence.length());
         System.out.println(printedString);
