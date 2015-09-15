@@ -1,13 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+//***********************************************************************************************************
+//***********************************************************************************************************
+
+//Class:    CandidateMotif
+//Description: Object that is used to represent a motif and its score.  The score can be either the Hamming Distance or it Alignment Score
+//             depending on what is needed.
+
+//***********************************************************************************************************
+//***********************************************************************************************************
 package motif.finder;
 
 public class CandidateMotif {
-    public String sequence;
-    public int score;
+    public String sequence; //sequence/pattern for the motif
+    public int score; //hamming distance or score this particular motif scored
     
     public CandidateMotif(String sequence, int score){
         this.sequence = sequence;
